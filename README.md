@@ -39,7 +39,7 @@ Local read-only routes:
 - `GET /command-news/status.json`
 - `GET /command-news/health`
 
-`HEAD` is supported; POST, PUT, PATCH, and DELETE return 405. The proposed public URLs are `https://wesley.thesisko.com/command-news/...` after the prepared nginx snippet is installed.
+`HEAD` is supported; POST, PUT, PATCH, and DELETE return 405. Production public URLs are `https://wesley.thesisko.com/command-news/...`, served as static files from the existing blog root after a refresh publishes them; no nginx change is required.
 
 ## Test
 
@@ -54,10 +54,10 @@ The suite includes a deliberate second-run feed failure and proves byte-equivale
 
 - `deploy/systemd/news-feed-refresh.service`
 - `deploy/systemd/news-feed-refresh.timer`
-- `deploy/systemd/news-feed-server.service`
-- `deploy/nginx/command-news.conf`
+- `deploy/systemd/news-feed-server.service` (optional localhost server, unchanged)
+- `deploy/nginx/command-news.conf` (optional proxy alternative, unchanged and not needed by static publication)
 
-The user timer uses explicit `Europe/Stockholm` calendar entries at 00:30, 04:30, 08:30, 12:30, 14:35, 16:30, 19:35, and 20:30. Thus the maximum scheduled gap is four hours, and dedicated runs land before all three digest cutoffs. `Persistent=true` catches missed runs after downtime. The prepared refresh service grants write access under `ProtectHome=read-only` only to `data/` and the two dedicated blog publication directories. Deployment is intentionally separate from repository creation and requires operator review.
+The production static path needs only the refresh service and timer; the localhost server remains available on port 3011 for its existing use. The user timer uses explicit `Europe/Stockholm` calendar entries at 00:30, 04:30, 08:30, 12:30, 14:35, 16:30, 19:35, and 20:30. Thus the maximum scheduled gap is four hours, and dedicated runs land before all three digest cutoffs. `Persistent=true` catches missed runs after downtime. The prepared refresh service grants write access under `ProtectHome=read-only` only to `data/` and the two dedicated blog publication directories. Deployment is intentionally separate from repository creation and requires operator review.
 
 ## Design assumptions
 
