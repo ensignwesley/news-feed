@@ -25,6 +25,30 @@ ATOM = b'''<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">
 
 
 class CollectorTests(unittest.TestCase):
+    def test_production_config_is_exact_contract(self):
+        expected = {
+            "Hacker News": "https://hnrss.org/frontpage?count=10",
+            "Ars Technica": "https://feeds.arstechnica.com/arstechnica/index",
+            "SVT Nyheter": "https://www.svt.se/nyheter/rss.xml",
+            "Rock Paper Shotgun": "https://www.rockpapershotgun.com/feed",
+            "Zephyr Project": "https://zephyrproject.org/feed/",
+            "Quanta Magazine": "https://api.quantamagazine.org/feed/",
+            "embedded.fm": "http://makingembeddedsystems.libsyn.com/rss",
+            "arXiv cs.AI": "http://export.arxiv.org/rss/cs.AI",
+            "arXiv cs.LG": "http://export.arxiv.org/rss/cs.LG",
+            "Tom's Hardware": "https://www.tomshardware.com/feeds/all",
+            "TechPowerUp": "https://www.techpowerup.com/rss/news",
+            "Phoronix": "https://www.phoronix.com/rss.php",
+            "Chips and Cheese": "https://chipsandcheese.com/feed/",
+            "ServeTheHome": "https://www.servethehome.com/feed/",
+            "Hackaday": "https://hackaday.com/feed/",
+            "PC Gamer": "https://www.pcgamer.com/rss/",
+            "Eurogamer": "https://www.eurogamer.net/feed",
+            "Steam New Releases": "https://store.steampowered.com/feeds/newreleases.xml",
+        }
+        config = Path(__file__).parents[1] / "config" / "feeds.json"
+        self.assertEqual(json.loads(config.read_text()), expected)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.out = Path(self.temp.name)

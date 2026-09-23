@@ -4,7 +4,6 @@ import email.utils
 import fcntl
 import json
 import os
-import random
 import tempfile
 import time
 import urllib.error
@@ -120,7 +119,7 @@ def fetch_with_retries(url: str, *, timeout: float, retries: int, fetcher: Calla
         except Exception as exc:  # normalized into status; each attempt remains bounded
             last = exc
             if attempt < retries:
-                sleeper(min(2 ** attempt, 4) + random.random() * 0.1)
+                sleeper(min(2 ** attempt, 4))
     raise RuntimeError(f"{type(last).__name__}: {last}") from last
 
 
