@@ -1,0 +1,18 @@
+[Unit]
+Description=Refresh Command news feed at bounded Stockholm intervals
+
+[Timer]
+OnCalendar=*-*-* 00:30:00 Europe/Stockholm
+OnCalendar=*-*-* 04:30:00 Europe/Stockholm
+OnCalendar=*-*-* 08:30:00 Europe/Stockholm
+OnCalendar=*-*-* 12:30:00 Europe/Stockholm
+OnCalendar=*-*-* 14:35:00 Europe/Stockholm
+OnCalendar=*-*-* 16:30:00 Europe/Stockholm
+OnCalendar=*-*-* 19:35:00 Europe/Stockholm
+OnCalendar=*-*-* 20:30:00 Europe/Stockholm
+Persistent=true
+RandomizedDelaySec=0
+Unit=news-feed-refresh.service
+
+[Install]
+WantedBy=timers.target

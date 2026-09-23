@@ -1,0 +1,15 @@
+[Unit]
+Description=Refresh Command news feed
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/jarvis/news-feed
+ExecStart=/usr/bin/python3 -m newsfeed.cli refresh --config /home/jarvis/news-feed/config/feeds.json --output-dir /home/jarvis/news-feed/data
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/jarvis/news-feed/data
