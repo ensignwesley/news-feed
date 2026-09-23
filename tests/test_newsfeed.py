@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import stat
 import tempfile
 import threading
 import unittest
@@ -149,6 +150,11 @@ class CollectorTests(unittest.TestCase):
                 atomic_json(target, [{"new": True}])
         self.assertEqual(target.read_bytes(), before)
         self.assertEqual(list(self.out.glob(".feed.json.*")), [])
+
+    def test_atomic_json_publishes_world_readable_files(self):
+        target = self.out / "feed.json"
+        atomic_json(target, [{"public": True}])
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o644)
 
     def test_cli_publishes_degraded_fallback_to_every_directory_before_nonzero(self):
         config = self.out / "feeds.json"
