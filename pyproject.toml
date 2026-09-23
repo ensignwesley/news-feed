@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "command-news-feed"
+version = "1.0.0"
+description = "Deterministic, failure-retaining public news-feed collector"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+news-feed = "newsfeed.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["newsfeed*"]
