@@ -16,6 +16,7 @@ from typing import Callable, Iterable
 
 USER_AGENT = "ensignwesley-news-feed/1.0 (+https://github.com/ensignwesley/news-feed)"
 ITEM_KEYS = ("title", "url", "source", "publishedAt", "fetchedAt")
+PUBLIC_FILES = ("feed.json", "status.json", "health.json")
 DATE_TAGS = ("published", "updated", "pubDate", "date", "created")
 LINK_TAGS = ("link", "guid")
 
@@ -144,6 +145,35 @@ def atomic_json(path: Path, data: object) -> None:
         except FileNotFoundError:
             pass
         raise
+
+
+def publish(output: list[dict], status: dict, publish_dirs: Iterable[Path]) -> None:
+    """Publish the public contract without copying private refresh state."""
+    failed_sources = [
+        name for name, state in status.get("sources", {}).items()
+        if state.get("error")
+    ]
+    documents = {
+        "feed.json": output,
+        "status.json": status,
+        "health.json": {
+            "healthy": bool(status.get("healthy")) and not failed_sources,
+            "generatedAt": status["generatedAt"],
+            "failedSources": failed_sources,
+        },
+    }
+    for publish_dir in publish_dirs:
+        publish_dir.mkdir(parents=True, exist_ok=True)
+        for name in PUBLIC_FILES:
+            atomic_json(publish_dir / name, documents[name])
+        # Dedicated publication directories contain only the public contract.
+        # In particular, stale cache/lock files must never become web-readable.
+        for path in publish_dir.iterdir():
+            if path.name in PUBLIC_FILES:
+                continue
+            if path.is_dir():
+                raise RuntimeError(f"unexpected directory in publish directory: {path}")
+            path.unlink()
 
 
 def read_json(path: Path, default: object) -> object:

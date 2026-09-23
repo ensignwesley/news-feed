@@ -6,10 +6,10 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 WorkingDirectory=/home/jarvis/news-feed
-ExecStart=/usr/bin/python3 -m newsfeed.cli refresh --config /home/jarvis/news-feed/config/feeds.json --output-dir /home/jarvis/news-feed/data
+ExecStart=/usr/bin/python3 -m newsfeed.cli refresh --config /home/jarvis/news-feed/config/feeds.json --output-dir /home/jarvis/news-feed/data --publish-dir /home/jarvis/blog/static/command-news --publish-dir /home/jarvis/blog/public/command-news
 Nice=10
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/jarvis/news-feed/data
+ReadWritePaths=/home/jarvis/news-feed/data /home/jarvis/blog/static/command-news /home/jarvis/blog/public/command-news

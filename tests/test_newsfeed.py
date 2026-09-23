@@ -9,8 +9,10 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
-from newsfeed.core import exclusive_lock, parse_feed, refresh
+from newsfeed.cli import main
+from newsfeed.core import atomic_json, exclusive_lock, parse_feed, publish, refresh
 from newsfeed.server import handler_factory
 
 RSS = b'''<?xml version="1.0"?><rss version="2.0"><channel><title>x</title>
@@ -96,6 +98,14 @@ class CollectorTests(unittest.TestCase):
         self.assertIn("deliberate broken-feed proof", state["error"])
         self.assertFalse(status["healthy"])
         self.assertEqual(json.loads((self.out / "feed.json").read_text()), first_source)
+        public = self.out / "published"
+        publish(second, status, [public])
+        self.assertEqual(json.loads((public / "feed.json").read_text()), first_source)
+        self.assertEqual(json.loads((public / "health.json").read_text()), {
+            "healthy": False,
+            "generatedAt": "2026-09-23T18:00:00+00:00",
+            "failedSources": ["Broken Later"],
+        })
 
     def test_successful_empty_after_age_filter_is_valid(self):
         old = RSS.replace(b"Wed, 23 Sep 2026 16:00:00 +0000", b"Sun, 20 Sep 2026 16:00:00 +0000").replace(
@@ -111,6 +121,59 @@ class CollectorTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "already running"):
                 with exclusive_lock(lock):
                     pass
+
+    def test_publication_contains_exact_public_files_and_scrubs_private_state(self):
+        public = self.out / "public"
+        public.mkdir()
+        (public / "cache.json").write_text('{"secret": true}\n')
+        (public / "refresh.lock").write_text("stale")
+        status = {
+            "generatedAt": "2026-09-23T17:00:00+00:00",
+            "healthy": True,
+            "sources": {"RSS": {"error": None}},
+        }
+        publish([{"title": "x"}], status, [public])
+        self.assertEqual({path.name for path in public.iterdir()}, {"feed.json", "status.json", "health.json"})
+        self.assertEqual(json.loads((public / "health.json").read_text()), {
+            "healthy": True,
+            "generatedAt": "2026-09-23T17:00:00+00:00",
+            "failedSources": [],
+        })
+
+    def test_atomic_json_keeps_prior_complete_document_on_serialization_failure(self):
+        target = self.out / "feed.json"
+        target.write_text('[{"old": true}]\n')
+        before = target.read_bytes()
+        with mock.patch("newsfeed.core.json.dump", side_effect=RuntimeError("deliberate write failure")):
+            with self.assertRaisesRegex(RuntimeError, "deliberate write failure"):
+                atomic_json(target, [{"new": True}])
+        self.assertEqual(target.read_bytes(), before)
+        self.assertEqual(list(self.out.glob(".feed.json.*")), [])
+
+    def test_cli_publishes_degraded_fallback_to_every_directory_before_nonzero(self):
+        config = self.out / "feeds.json"
+        config.write_text('{"Broken": "broken://deliberate"}\n')
+        status = {
+            "generatedAt": "2026-09-23T18:00:00+00:00",
+            "healthy": False,
+            "sources": {"Broken": {"error": "deliberate source failure"}},
+        }
+        first = self.out / "static"
+        second = self.out / "built"
+        with mock.patch("newsfeed.cli.refresh", return_value=([{"title": "retained"}], status)):
+            result = main([
+                "refresh", "--config", str(config), "--output-dir", str(self.out / "data"),
+                "--publish-dir", str(first), "--publish-dir", str(second),
+            ])
+        self.assertEqual(result, 1)
+        for directory in (first, second):
+            self.assertEqual({path.name for path in directory.iterdir()}, {"feed.json", "status.json", "health.json"})
+            self.assertEqual(json.loads((directory / "feed.json").read_text()), [{"title": "retained"}])
+            self.assertEqual(json.loads((directory / "health.json").read_text()), {
+                "healthy": False,
+                "generatedAt": "2026-09-23T18:00:00+00:00",
+                "failedSources": ["Broken"],
+            })
 
 
 class ServerTests(unittest.TestCase):
