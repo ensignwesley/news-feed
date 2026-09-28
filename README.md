@@ -1,6 +1,6 @@
 # Command News Feed
 
-A zero-dependency Python collector and read-only localhost HTTP service for Command's digest pipeline. It polls 18 public RSS/Atom feeds, publishes the exact five-field item contract, and retains each source's last-good cache if that source fails.
+A zero-dependency Python collector and read-only localhost HTTP service for a public JSON news feed. It polls 18 public RSS/Atom feeds, publishes the exact five-field item contract, and retains each source's last-good cache if that source fails.
 
 ## Data contract
 
